@@ -1,0 +1,4 @@
+N={S}
+E={a,b,c}
+P={S->a S a|b S b|c}
+S={S}
