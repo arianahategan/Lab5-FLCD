@@ -1,4 +1,4 @@
-N={S,A,B,C}
+N={S,A,B,C,D}
 E={+,*,a,(,)}
-P={S->A B C,A->a|epsilon,B->+|epsilon,C->*}
+P={S->B A,A->+ B A|epsilon,B->D C,C->* D C|epsilon,D->( S )|a}
 S={S}

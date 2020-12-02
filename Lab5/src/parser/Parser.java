@@ -4,6 +4,7 @@ import grammar.Grammar;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Stack;
 
 
@@ -46,27 +47,21 @@ public class Parser {
         //F1
         {
             HashMap<String, ArrayList<String>> newColumn = new HashMap<>();
-
-
             for (String nonTerminal : this.grammar.getNonTerminals()) {
-
                 ArrayList<ArrayList<String>> productionsForNonTerminal = this.grammar.getProductions().get(nonTerminal);
-                ArrayList<String> var = new ArrayList<>();
+                ArrayList<String> rhsNonTerminals = new ArrayList<>();
+                String rhsTerminals = null;
                 for (ArrayList<String> productionForNonTerminal : productionsForNonTerminal) {
                     for (String symbol : productionForNonTerminal)
                         if (this.grammar.getNonTerminals().contains(symbol))
-                            var.add(symbol);
-                        else
+                            rhsNonTerminals.add(symbol);
+                        else{
+                            rhsTerminals = symbol;
                             break;
+                        }
                 }
                 ArrayList<String> toAdd = new ArrayList<>(table.get(0).get(nonTerminal));
-
-                for (int i = 0; i < var.size() - 1; i++) {
-                    ArrayList<String> concat = concatenation(table.get(0).get(var.get(i)), table.get(0).get(var.get(i + 1)));
-                    toAdd.addAll(concat);
-                    toAdd = toSet(toAdd);
-
-                }
+                toAdd.addAll(toSet(multipleConcatenation(table.get(0), rhsNonTerminals, rhsTerminals)));
                 newColumn.put(nonTerminal, toAdd);
             }
             index++;
@@ -78,35 +73,64 @@ public class Parser {
         //the other columns
         while (!table.get(index).equals(table.get(index - 1))) {
             HashMap<String, ArrayList<String>> newColumn = new HashMap<>();
-
-
             for (String nonTerminal : this.grammar.getNonTerminals()) {
 
                 ArrayList<ArrayList<String>> productionsForNonTerminal = this.grammar.getProductions().get(nonTerminal);
-                ArrayList<String> var = new ArrayList<>();
+                ArrayList<String> rhsNonTerminals = new ArrayList<>();
+                String rhsTerminals = null;
                 for (ArrayList<String> productionForNonTerminal : productionsForNonTerminal) {
                     for (String symbol : productionForNonTerminal)
                         if (this.grammar.getNonTerminals().contains(symbol))
-                            var.add(symbol);
-                        else
+                            rhsNonTerminals.add(symbol);
+                        else{
+                            rhsTerminals = symbol;
                             break;
-                }
-                ArrayList<String> toAdd = new ArrayList<>(table.get(index).get(nonTerminal));
-                for (int i = 0; i < var.size() - 1; i++) {
-                    ArrayList<String> concat = concatenation(table.get(index).get(var.get(i)), table.get(index).get(var.get(i + 1)));
-                    toAdd.addAll(concat);
-                    toAdd = toSet(toAdd);
+                        }
 
                 }
-                newColumn.put(nonTerminal, toAdd);
+                ArrayList<String> toAdd = new ArrayList<>(table.get(index).get(nonTerminal));
+                toAdd.addAll(multipleConcatenation(table.get(index), rhsNonTerminals, rhsTerminals));
+                newColumn.put(nonTerminal, toSet(toAdd));
             }
             index++;
             table.add(newColumn);
+
 
         }
         this.first = table.get(table.size() - 1);
     }
 
+    public ArrayList<String> multipleConcatenation(HashMap<String, ArrayList<String>> previousColumn, ArrayList<String> rhsNonTerminals, String rhsTerminal) {
+        ArrayList<String> concatenation = new ArrayList<>();
+        if(rhsNonTerminals.size() == 0)
+            return concatenation;
+        if(rhsNonTerminals.size() == 1){
+            return previousColumn.get(rhsNonTerminals.get(0));
+        }
+        int step = 0;
+        boolean allEpsilon = true;
+        for(String nonTerminal: rhsNonTerminals)
+            if(!previousColumn.get(nonTerminal).contains("epsilon"))
+                allEpsilon = false;
+        if(allEpsilon){
+            concatenation.add(Objects.requireNonNullElse(rhsTerminal, "epsilon"));
+        }
+
+        while(step < rhsNonTerminals.size()){
+            boolean thereIsOneEpsilon = false;
+            for(String s: previousColumn.get(rhsNonTerminals.get(step)))
+                if(s.equals("epsilon"))
+                    thereIsOneEpsilon = true;
+                else
+                    concatenation.add(s);
+
+            if(thereIsOneEpsilon)
+                step++;
+            else
+                break;
+        }
+        return concatenation;
+    }
 
     private ArrayList<String> toSet(ArrayList<String> var) {
         ArrayList<String> set = new ArrayList<>();
@@ -115,23 +139,6 @@ public class Parser {
                 set.add(s);
         return set;
     }
-
-
-    private ArrayList<String> concatenation(ArrayList<String> l1, ArrayList<String> l2) {
-        ArrayList<String> concatenationList = new ArrayList<>();
-
-        if (l1.isEmpty() || l2.isEmpty())
-            return concatenationList;
-        for (String s1 : l1) {
-            if (!s1.equals("epsilon")) {
-                concatenationList.add(s1);
-            } else {
-                concatenationList.addAll(l2);
-            }
-        }
-        return this.toSet(concatenationList);
-    }
-
 
     private void computeFollow() {
         ArrayList<HashMap<String, ArrayList<String>>> table = new ArrayList<>();
@@ -169,7 +176,8 @@ public class Parser {
                         String symbol = productionForNonTerminal.get(i);
                         //if the symbol is a non terminal
                         if (this.grammar.getNonTerminals().contains(symbol)){
-                            //B->aA
+                            // B->pA
+                            // follow(A) += follow(B)
                             if(i == productionForNonTerminal.size() - 1){
                                 // FOLLOW(symbol) += FOLLOW(nonTerminal)
                                 ArrayList<String> var = new ArrayList<>(table.get(index).get(nonTerminal)); //FOLLOW(nonTerminal)
@@ -179,11 +187,25 @@ public class Parser {
                                 newColumn.remove(symbol);
                                 newColumn.put(symbol, aux);
                             }
-                            //B->aAb
+                            //B -> p A q
                             else{
+                                // if after A is a non terminal
                                 if(this.grammar.getNonTerminals().contains(productionForNonTerminal.get(i+1)))
                                 {
-                                    if(this.first.get(productionForNonTerminal.get(i+1)).contains("epsilon")) {
+                                    // first(q)
+                                    ArrayList<String> nonTerminals = new ArrayList<>();
+                                    String terminal = null;
+                                    for(int j = i + 1; j < productionForNonTerminal.size(); j++)
+                                        if(this.grammar.getNonTerminals().contains(productionForNonTerminal.get(j)))
+                                            nonTerminals.add(productionForNonTerminal.get(j));
+                                        else{
+                                            terminal = productionForNonTerminal.get(j);
+                                            break;
+                                        }
+
+                                    ArrayList<String> firstOfWhatIsAfter = multipleConcatenation(this.first, nonTerminals, terminal);
+                                    // if first(q) contains epsilon
+                                    if(firstOfWhatIsAfter.contains("epsilon")) {
                                         // FOLLOW(symbol) += FOLLOW(nonTerminal)
                                         ArrayList<String> var = new ArrayList<>(table.get(index).get(nonTerminal)); //FOLLOW(nonTerminal)
                                         ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
@@ -194,7 +216,7 @@ public class Parser {
 
                                     }
                                     // FOLLOW(symbol) += FIRST(productionForNonTerminal.get(index+1)) \ {epsilon}
-                                    ArrayList<String> f = new ArrayList<>(this.first.get(productionForNonTerminal.get(i+1))); //FIRST(b)
+                                    ArrayList<String> f = new ArrayList<>(firstOfWhatIsAfter); //FIRST(q)
                                     f.remove("epsilon");
                                     ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
                                     aux.addAll(f);
@@ -202,9 +224,12 @@ public class Parser {
                                     newColumn.remove(symbol);
                                     newColumn.put(symbol, aux);
                                 }
+                                // if after A is a terminal (i.e. q is a terminal), then first(q) = q
+                                // follow(A) += first(q)
                                 else{
                                     ArrayList<String> f = new ArrayList<>();
                                     f.add(productionForNonTerminal.get(i+1));
+                                    // if that terminal is epsilon, we do not add anything
                                     f.remove("epsilon");
                                     ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
                                     aux.addAll(f);
@@ -242,7 +267,8 @@ public class Parser {
                         String symbol = productionForNonTerminal.get(i);
                         //if the symbol is a non terminal
                         if (this.grammar.getNonTerminals().contains(symbol)){
-                            //B->aA
+                            // B->pA
+                            // follow(A) += follow(B)
                             if(i == productionForNonTerminal.size() - 1){
                                 // FOLLOW(symbol) += FOLLOW(nonTerminal)
                                 ArrayList<String> var = new ArrayList<>(table.get(index).get(nonTerminal)); //FOLLOW(nonTerminal)
@@ -252,11 +278,25 @@ public class Parser {
                                 newColumn.remove(symbol);
                                 newColumn.put(symbol, aux);
                             }
-                            //B->aAb
+                            //B -> p A q
                             else{
+                                // if after A is a non terminal
                                 if(this.grammar.getNonTerminals().contains(productionForNonTerminal.get(i+1)))
                                 {
-                                    if(this.first.get(productionForNonTerminal.get(i+1)).contains("epsilon")) {
+                                    // first(q)
+                                    ArrayList<String> nonTerminals = new ArrayList<>();
+                                    String terminal = null;
+                                    for(int j = i + 1; j < productionForNonTerminal.size(); j++)
+                                        if(this.grammar.getNonTerminals().contains(productionForNonTerminal.get(j)))
+                                            nonTerminals.add(productionForNonTerminal.get(j));
+                                        else{
+                                            terminal = productionForNonTerminal.get(j);
+                                            break;
+                                        }
+
+                                    ArrayList<String> firstOfWhatIsAfter = multipleConcatenation(this.first, nonTerminals, terminal);
+                                    // if first(q) contains epsilon
+                                    if(firstOfWhatIsAfter.contains("epsilon")) {
                                         // FOLLOW(symbol) += FOLLOW(nonTerminal)
                                         ArrayList<String> var = new ArrayList<>(table.get(index).get(nonTerminal)); //FOLLOW(nonTerminal)
                                         ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
@@ -267,7 +307,7 @@ public class Parser {
 
                                     }
                                     // FOLLOW(symbol) += FIRST(productionForNonTerminal.get(index+1)) \ {epsilon}
-                                    ArrayList<String> f = new ArrayList<>(this.first.get(productionForNonTerminal.get(i+1))); //FIRST(b)
+                                    ArrayList<String> f = new ArrayList<>(firstOfWhatIsAfter); //FIRST(q)
                                     f.remove("epsilon");
                                     ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
                                     aux.addAll(f);
@@ -275,9 +315,12 @@ public class Parser {
                                     newColumn.remove(symbol);
                                     newColumn.put(symbol, aux);
                                 }
+                                // if after A is a terminal (i.e. q is a terminal), then first(q) = q
+                                // follow(A) += first(q)
                                 else{
                                     ArrayList<String> f = new ArrayList<>();
                                     f.add(productionForNonTerminal.get(i+1));
+                                    // if that terminal is epsilon, we do not add anything
                                     f.remove("epsilon");
                                     ArrayList<String> aux = new ArrayList<>(newColumn.get(symbol));
                                     aux.addAll(f);
@@ -302,7 +345,6 @@ public class Parser {
     public HashMap<String, ArrayList<String>> getFirst() {
         return first;
     }
-
 
     public HashMap<String, ArrayList<String>> getFollow() {
         return follow;
