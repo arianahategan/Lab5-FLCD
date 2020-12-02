@@ -1,5 +1,7 @@
 package parser;
 
+import java.util.Objects;
+
 public class Pair {
     private String firstElement;
     private String secondElement;
@@ -23,6 +25,20 @@ public class Pair {
 
     public void setSecondElement(String secondElement) {
         this.secondElement = secondElement;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair pair = (Pair) o;
+        return firstElement.equals(pair.firstElement) &&
+                secondElement.equals(pair.secondElement);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(firstElement, secondElement);
     }
 
     @Override

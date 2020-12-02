@@ -12,10 +12,10 @@ public class Parser {
     private final Grammar grammar;
     private HashMap<String, ArrayList<String>> first;
     private HashMap<String, ArrayList<String>> follow;
-    private HashMap<Pair, ParsingTableCell> parsingTable;
-    Stack<String> inputStack;
-    Stack<String> workingStack;
-    Stack<String> output;
+    private final HashMap<Pair, ParsingTableCell> parsingTable;
+    Stack<String> inputStack = new Stack<>();
+    Stack<String> workingStack = new Stack<>();
+    Stack<String> output = new Stack<>();
 
     public Parser(Grammar grammar) {
         this.grammar = grammar;
@@ -23,6 +23,8 @@ public class Parser {
         this.computeFirst();
         this.follow = new HashMap<>();
         this.computeFollow();
+        this.parsingTable = new HashMap<>();
+        this.computeParsingTable();
     }
 
     private void computeFirst() {
@@ -100,7 +102,7 @@ public class Parser {
         this.first = table.get(table.size() - 1);
     }
 
-    public ArrayList<String> multipleConcatenation(HashMap<String, ArrayList<String>> previousColumn, ArrayList<String> rhsNonTerminals, String rhsTerminal) {
+    private ArrayList<String> multipleConcatenation(HashMap<String, ArrayList<String>> previousColumn, ArrayList<String> rhsNonTerminals, String rhsTerminal) {
         ArrayList<String> concatenation = new ArrayList<>();
         if(rhsNonTerminals.size() == 0)
             return concatenation;
@@ -130,6 +132,27 @@ public class Parser {
                 break;
         }
         return concatenation;
+    }
+
+    private ArrayList<String> firstOfSequence(ArrayList<String> rhs){
+        ArrayList<String> result = new ArrayList<>();
+        ArrayList<String> rhsNonTerminals = new ArrayList<>();
+        String terminal = null;
+        if(this.grammar.getTerminals().contains(rhs.get(0))){
+            result.add(rhs.get(0));
+            return result;
+        }
+        else{
+            for (String s : rhs) {
+                if (this.grammar.getNonTerminals().contains(s))
+                    rhsNonTerminals.add(s);
+                else {
+                    terminal = s;
+                    break;
+                }
+            }
+        }
+        return multipleConcatenation(this.first, rhsNonTerminals, terminal);
     }
 
     private ArrayList<String> toSet(ArrayList<String> var) {
@@ -350,6 +373,61 @@ public class Parser {
         return follow;
     }
 
+    private void computeParsingTable() {
+        ArrayList<String> allSymbols = (ArrayList<String>) grammar.getNonTerminals().clone();
+        allSymbols.addAll(grammar.getTerminals());
+        allSymbols.add("$");
+        for (String nonTerminal : allSymbols) {
+            for (String terminal : grammar.getTerminals()) {
+                if (nonTerminal.equals(terminal)) {
+                    var pop = new ArrayList<String>();
+                    pop.add("pop");
+                    parsingTable.put(new Pair(nonTerminal, terminal), new ParsingTableCell(pop, 0));
+                } else {
+                    parsingTable.put(new Pair(nonTerminal, terminal), null);
+                }
+            }
+            if (nonTerminal.equals("$")) {
+                var acc = new ArrayList<String>();
+                acc.add("acc");
+                parsingTable.put(new Pair(nonTerminal, "$"), new ParsingTableCell(acc, 0));
+            } else {
+                parsingTable.put(new Pair(nonTerminal, "$"), null);
+            }
+        }
+
+        var productions = this.grammar.getProductions();
+
+        var prodIndex = 1;
+
+        for (String nonTerminal : grammar.getNonTerminals()) {
+            var nonTerminalProds = productions.get(nonTerminal);
+            for (ArrayList<String> prod : nonTerminalProds) {
+                if (grammar.getTerminals().contains(prod.get(0))) {
+                    var rhs = prod.get(0);
+                    parsingTable.put(new Pair(nonTerminal, rhs), new ParsingTableCell(prod, prodIndex));
+                }
+                else if (prod.get(0).equals("epsilon")) {
+                    var follow = this.follow.get(nonTerminal);
+                    for (String elem : follow) {
+                        parsingTable.put(new Pair(nonTerminal, elem), new ParsingTableCell(prod, prodIndex));
+                    }
+                }
+                else if(grammar.getNonTerminals().contains(prod.get(0))){
+                    var rhs = this.first.get(prod.get(0));
+                    for (String elem : rhs) {
+                        parsingTable.put(new Pair(nonTerminal, elem), new ParsingTableCell(prod, prodIndex));
+                    }
+                }
+                prodIndex++;
+            }
+        }
+    }
+
+    public HashMap<Pair, ParsingTableCell> getParsingTable() {
+        return parsingTable;
+    }
+
     public boolean parseSequence(ArrayList<String> sequence){
         initializeStacks(sequence);
 
@@ -358,7 +436,7 @@ public class Parser {
 
         while(go){
             String headOfInputStack = inputStack.peek();
-            String headOfWorkingStack = output.peek();
+            String headOfWorkingStack = workingStack.peek();
 
             if(headOfWorkingStack.equals("$") && headOfInputStack.equals("$"))
                 return result;
@@ -380,16 +458,16 @@ public class Parser {
             }
             else{
                 ArrayList<String> seq = cell.getSequence();
-                int productionNumber = cell.getStep();
+                int productionNumber = cell.getProductionNumber();
 
-                if (productionNumber == -1 && seq.get(0).equals("acc")) {
+                if (productionNumber == 0 && seq.get(0).equals("acc")) {
                     go = false;
-                } else if (productionNumber == -1 && seq.get(0).equals("pop")) {
+                } else if (productionNumber == 0 && seq.get(0).equals("pop")) {
                     workingStack.pop();
                     inputStack.pop();
                 } else {
                     workingStack.pop();
-                    if (!seq.get(0).equals("ε")) {
+                    if (!seq.get(0).equals("epsilon")) {
                         for(int i = seq.size() - 1; i >= 0; i--)
                             workingStack.push(seq.get(i));
 
@@ -398,13 +476,12 @@ public class Parser {
                 }
             }
 
-
-
         }
 
         return result;
 
     }
+
 
     public void  initializeStacks(ArrayList<String> sequence){
         inputStack.clear();

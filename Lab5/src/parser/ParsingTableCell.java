@@ -4,11 +4,11 @@ import java.util.ArrayList;
 
 public class ParsingTableCell {
     private ArrayList<String> sequence;
-    int step;
+    int productionNumber;
 
     public ParsingTableCell(ArrayList<String> sequence, int step) {
         this.sequence = sequence;
-        this.step = step;
+        this.productionNumber = step;
     }
 
     public ArrayList<String> getSequence() {
@@ -19,18 +19,18 @@ public class ParsingTableCell {
         this.sequence = sequence;
     }
 
-    public int getStep() {
-        return step;
+    public int getProductionNumber() {
+        return productionNumber;
     }
 
-    public void setStep(int step) {
-        this.step = step;
+    public void setProductionNumber(int step) {
+        this.productionNumber = step;
     }
 
     @Override
     public String toString() {
         return "(" + sequence +
-                ", " + step +
+                ", " + productionNumber +
                 ')';
     }
 }
