@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Grammar {
     private ArrayList<String> nonTerminals;
@@ -24,10 +25,23 @@ public class Grammar {
 
     @Override
     public String toString() {
+        String productionsString = "";
+
+        for(String key: productions.keySet()){
+            productionsString += key;
+            productionsString += " -> ";
+            for(ArrayList<String> aux: productions.get(key)){
+                productionsString += aux;
+                productionsString += " | ";
+            }
+            productionsString += "\n";
+
+
+        }
         return "Grammar{" +
                 "nonTerminals=" + nonTerminals +
                 ", terminals=" + terminals +
-                ", productions=" + productions +
+                ", productions=" + productionsString +
                 ", startingSymbol='" + startingSymbol + '\'' +
                 '}';
     }
@@ -38,8 +52,9 @@ public class Grammar {
             reader = new BufferedReader(new FileReader(fileName));
             String line = reader.readLine();
             while(line != null){
-                String set = line.split("=")[0];
-                String[] util = line.substring(line.indexOf("{") + 1, line.indexOf("}")).split(",");
+                String set = line.split("---")[0];
+                //String[] util = line.substring(line.indexOf("{") + 1, line.indexOf("}")).split(",");
+                String[] util = line.split("---")[1].split(",");
                 switch (set){
                     case "N":
                         this.nonTerminals = new ArrayList<>(Arrays.asList(util));

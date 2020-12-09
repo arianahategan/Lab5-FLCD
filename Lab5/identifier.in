@@ -1,0 +1,5 @@
+states:q0,qf
+alphabet:a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,0,1,2,3,4,5,6,7,8,9
+initialStates:q0
+transitions:q0/a/qf;q0/b/qf;q0/c/qf;q0/d/qf;q0/e/qf;q0/f/qf;q0/g/qf;q0/h/qf;q0/i/qf;q0/j/qf;q0/k/qf;q0/l/qf;q0/m/qf;q0/n/qf;q0/o/qf;q0/p/qf;q0/q/qf;q0/r/qf;q0/s/qf;q0/t/qf;q0/u/qf;q0/v/qf;q0/w/qf;q0/x/qf;q0/y/qf;q0/z/qf;q0/A/qf;q0/B/qf;q0/C/qf;q0/D/qf;q0/E/qf;q0/F/qf;q0/G/qf;q0/H/qf;q0/I/qf;q0/J/qf;q0/K/qf;q0/L/qf;q0/M/qf;q0/N/qf;q0/O/qf;q0/P/qf;q0/Q/qf;q0/R/qf;q0/S/qf;q0/T/qf;q0/U/qf;q0/V/qf;q0/W/qf;q0/X/qf;q0/Y/qf;q0/Z/qf;qf/a/qf;qf/b/qf;qf/c/qf;qf/d/qf;qf/e/qf;qf/f/qf;qf/g/qf;qf/h/qf;qf/i/qf;qf/j/qf;qf/k/qf;qf/l/qf;qf/m/qf;qf/n/qf;qf/o/qf;qf/p/qf;qf/q/qf;qf/r/qf;qf/s/qf;qf/t/qf;qf/u/qf;qf/v/qf;qf/w/qf;qf/x/qf;qf/y/qf;qf/z/qf;qf/A/qf;qf/B/qf;qf/C/qf;qf/D/qf;qf/E/qf;qf/F/qf;qf/G/qf;qf/H/qf;qf/I/qf;qf/J/qf;qf/K/qf;qf/L/qf;qf/M/qf;qf/N/qf;qf/O/qf;qf/P/qf;qf/Q/qf;qf/R/qf;qf/S/qf;qf/T/qf;qf/U/qf;qf/V/qf;qf/W/qf;qf/X/qf;qf/Y/qf;qf/Z/qf;qf/0/qf;qf/1/qf;qf/2/qf;qf/3/qf;qf/4/qf;qf/5/qf;qf/6/qf;qf/7/qf;qf/8/qf;qf/9/qf;
+finalStates:qf

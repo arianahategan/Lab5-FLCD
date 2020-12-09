@@ -1,0 +1,15 @@
+@BEGIN
+INT a;
+INT b;
+INT c;
+STRING str;
+INT max;
+str:='ok;
+a:=10;
+b:=20;
+c:=0;
+max:=a;
+IF(max<b) {max:=b;}
+IF(max<c) {max:=c;}
+PRINT max;
+END

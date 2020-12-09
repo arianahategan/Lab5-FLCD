@@ -1,0 +1,10 @@
+BEGIN
+INT n;
+n:=2;
+BOOLEAN flag;
+flag:=FALSE;
+IF(n > 2) READ x;
+FOR(INT i:= 0;i<3;i++){
+    PRINT i;
+}
+END

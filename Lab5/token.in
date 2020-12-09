@@ -1,0 +1,3 @@
++,-,*,/,%,++,--,:=,>,<,>=,<=,<>,=,!=,||,&&
+{,},[,],;, ,(,)
+BEGIN,END,INT,BOOLEAN,CHAR,TRUE,FALSE,IF,ELSE,READ,PRINT,FOR,WHILE,CONST

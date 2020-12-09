@@ -1,0 +1,11 @@
+BEGIN
+INT a;
+INT b;
+INT c;
+INT max;
+a:=10;
+b:=-30;
+c:=0;
+max:=a;
+PRINT a + 3;
+END
